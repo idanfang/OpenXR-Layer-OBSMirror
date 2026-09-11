@@ -549,7 +549,7 @@
                                         <TextBlock x:Name="InstallPluginStatusText" FontSize="22" FontWeight="SemiBold" x:Uid="Ui_Status_Checking" Text="Checking…" />
                                         <TextBlock x:Name="InstallPluginPathText" Style="{StaticResource MutedTextStyle}" FontFamily="Cascadia Mono" FontSize="12" TextWrapping="Wrap" />
                                         <TextBlock x:Uid="Ui_Install_PluginHint" Text="Installs both OpenXR Mirror Capture and OpenVR / SteamVR Mirror Capture sources." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
-                                        <Button Click="LaunchObs_Click" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" x:Uid="Ui_Action_OpenObs" Content="Open OBS" />
+                                        <Button Click="LaunchObs_Click" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" x:Uid="Ui_Action_OpenObsButton" Content="Open OBS" />
                                     </StackPanel>
                                 </Border>
                             </Grid>

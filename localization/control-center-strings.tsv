@@ -22,7 +22,7 @@ Ui_QuickActions_Eyebrow	MainWindow.xaml	Text	QUICK ACTIONS	快捷操作
 Ui_QuickActions_Title	MainWindow.xaml	Text	Capture workflow	采集流程
 Ui_QuickActions_Layer	MainWindow.xaml	Text	Layer	层
 Ui_Action_OpenObs	MainWindow.xaml	Text	Open OBS	打开 OBS
-Ui_Action_OpenObs	MainWindow.xaml	Content	Open OBS	打开 OBS
+Ui_Action_OpenObsButton	MainWindow.xaml	Content	Open OBS	打开 OBS
 Ui_Action_UseHeadsetRuntime	MainWindow.xaml	Text	Use headset runtime	使用头显运行时
 Ui_Action_OpenLayerLog	MainWindow.xaml	Text	Open layer log	打开层日志
 Ui_RuntimeMode_Checking	MainWindow.xaml	Title	Checking runtime selection	正在检查运行时选择

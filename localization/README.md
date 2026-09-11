@@ -46,10 +46,16 @@ pwsh -File localization/tools/Test-Localization.ps1
    `Loc.S("Ui_Nav_Dashboard.Text", "Dashboard")`。
    只写 `Ui_Nav_Dashboard` 不会有编译错误，但查找会失败并静默回退英文；
    `Test-Localization.ps1` 会报出这种错误。
-2. **一个 XAML 元素只能有一个 `x:Uid`。**
+2. **一个 XAML 元素只能有一个 `x:Uid`，而且不要把一个 `x:Uid` 挂到多个元素上。**
    同一元素上多条文案（例如 InfoBar 的 `Title` 与 `Message`、ToggleSwitch 的
-   `OnContent` 与 `OffContent`）必须共用同一个键基名，
-   资源名为 `键.Title`、`键.Message`、`键.OnContent`、`键.OffContent`。
+   `OnContent` 与 `OffContent`）必须共用同一个键基名，资源名为 `键.Title`、`键.Message`、
+   `键.OnContent`、`键.OffContent`。
+   反过来，**不同元素不要共用同一个键基名**：MRT 会把该键下的**所有**资源套到**每个**
+   带该 Uid 的元素上；元素缺少其中某个属性时会在**运行时**抛 `XamlParseException`，
+   窗口根本不会出现（**编译期不报错**，只在实际启动时才炸）。
+   唯一例外：多个**同类型**元素共用一个 Uid，且该 Uid 只有一个属性——例如 6 个
+   `TextBlock` 共用 `Ui_Status_Checking.Text`，这是安全的。
+   `Test-Localization.ps1` 会强制检查这条规则（第 6 项）。
 
 ## 新增一种语言
 
