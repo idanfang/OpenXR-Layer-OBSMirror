@@ -8,7 +8,7 @@ on:
       version:
         description: '版本号，必须已存在 docs/release-notes/v<版本>.md'
         required: false
-        default: '0.3.0-zh.1'
+        default: '0.3.0-zh.3'
       file_version:
         description: '四段数字文件版本（留空则自动推导）'
         required: false
