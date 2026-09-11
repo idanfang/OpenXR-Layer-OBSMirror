@@ -1,5 +1,7 @@
 # OpenXR + OpenVR OBS Mirror
 
+**English** | [简体中文](README.zh-CN.md)
+
 **Capture native OpenXR applications or the SteamVR/OpenVR compositor directly
 in OBS Studio. OpenXR capture can also use a wider, steadier recording camera
 while the headset continues to look and track normally.**

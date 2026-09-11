@@ -1,5 +1,7 @@
 # OpenXR + OpenVR OBS Mirror installation
 
+**English** | [简体中文](INSTALL.zh-CN.md)
+
 OpenXR OBS Mirror captures an application-rendered OpenXR view or SteamVR's
 native OpenVR compositor mirror directly in OBS Studio while preserving the
 headset's normal runtime, view, and tracking.
