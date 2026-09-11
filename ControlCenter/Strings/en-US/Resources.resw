@@ -81,7 +81,7 @@
   <data name="Ui_Action_OpenObs.Text" xml:space="preserve">
     <value>Open OBS</value>
   </data>
-  <data name="Ui_Action_OpenObs.Content" xml:space="preserve">
+  <data name="Ui_Action_OpenObsButton.Content" xml:space="preserve">
     <value>Open OBS</value>
   </data>
   <data name="Ui_Action_UseHeadsetRuntime.Text" xml:space="preserve">

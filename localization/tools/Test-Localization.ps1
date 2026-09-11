@@ -104,7 +104,7 @@ else {
 }
 
 # --- 3. XAML x:Uid ---
-foreach ($xamlFile in (Get-ChildItem -LiteralPath $controlCenterRoot -Recurse -File -Filter *.xaml)) {
+foreach ($xamlFile in (Get-ChildItem -LiteralPath $controlCenterRoot -Recurse -File -Filter *.xaml | Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' })) {
     $content = Get-Content -LiteralPath $xamlFile.FullName -Raw -Encoding utf8
     foreach ($match in [regex]::Matches($content, 'x:Uid="(?<key>[^"]+)"')) {
         $key = $match.Groups['key'].Value
@@ -118,7 +118,7 @@ foreach ($xamlFile in (Get-ChildItem -LiteralPath $controlCenterRoot -Recurse -F
 # Loc takes a *resource name*, not an x:Uid key. A XAML-derived key therefore
 # has to carry its property suffix (Foo.Text), otherwise the lookup misses and
 # the UI silently falls back to English.
-foreach ($sourceFile in (Get-ChildItem -LiteralPath $controlCenterRoot -Recurse -File -Filter *.cs)) {
+foreach ($sourceFile in (Get-ChildItem -LiteralPath $controlCenterRoot -Recurse -File -Filter *.cs | Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' })) {
     $content = Get-Content -LiteralPath $sourceFile.FullName -Raw -Encoding utf8
     foreach ($match in [regex]::Matches($content, 'Loc\.(?:S|F)\("(?<key>[^"]+)"')) {
         $key = $match.Groups['key'].Value
@@ -156,6 +156,57 @@ foreach ($file in $pluginFiles) {
     }
 }
 Write-Host "Plugin locale files checked: $(($pluginFiles | ForEach-Object Name) -join ', ')"
+
+# --- 6. x:Uid property applicability ---
+# WinUI applies EVERY resource named "<Uid>.<Property>" to EVERY element that
+# carries x:Uid="<Uid>". If one of those elements has no such property (a
+# TextBlock receiving ".Content", for example) the app throws
+# XamlParseException while loading the XAML and never shows a window.
+# So each localized property must be an attribute present on every element that
+# carries the same x:Uid.
+$propertiesByUid = @{}
+foreach ($row in $rows) {
+    if ($row.prop -eq 'code') { continue }
+    $property = $row.prop -replace '[#*]\d*$', ''
+    if (-not $propertiesByUid.ContainsKey($row.key)) {
+        $propertiesByUid[$row.key] = [System.Collections.Generic.HashSet[string]]::new()
+    }
+    [void]$propertiesByUid[$row.key].Add($property)
+}
+
+$uidElementCount = @{}
+foreach ($xamlFile in (Get-ChildItem -LiteralPath $controlCenterRoot -Recurse -File -Filter *.xaml | Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' })) {
+    $content = Get-Content -LiteralPath $xamlFile.FullName -Raw -Encoding utf8
+    foreach ($tagMatch in [regex]::Matches($content, '<[A-Za-z][^<>]*>')) {
+        $tag = $tagMatch.Value
+        $uidMatch = [regex]::Match($tag, 'x:Uid="(?<uid>[^"]+)"')
+        if (-not $uidMatch.Success) { continue }
+        $uid = $uidMatch.Groups['uid'].Value
+
+        if ($uidElementCount.ContainsKey($uid)) { $uidElementCount[$uid]++ } else { $uidElementCount[$uid] = 1 }
+
+        if (-not $propertiesByUid.ContainsKey($uid)) { continue }
+        $attributes = [System.Collections.Generic.HashSet[string]]::new()
+        foreach ($attributeMatch in [regex]::Matches($tag, '(?<name>[A-Za-z][A-Za-z0-9.]*)="')) {
+            [void]$attributes.Add($attributeMatch.Groups['name'].Value)
+        }
+        foreach ($property in $propertiesByUid[$uid]) {
+            if (-not $attributes.Contains($property)) {
+                $problems.Add("$($xamlFile.Name): x:Uid=`"$uid`" owns resource '$uid.$property' but this element has no '$property' attribute, so WinUI throws XamlParseException at load time.")
+            }
+        }
+    }
+}
+
+# An x:Uid shared by several elements is only safe when it owns exactly one
+# property; otherwise every element must support all of them.
+foreach ($uid in $uidElementCount.Keys) {
+    if ($uidElementCount[$uid] -le 1) { continue }
+    if (-not $propertiesByUid.ContainsKey($uid)) { continue }
+    if ($propertiesByUid[$uid].Count -gt 1) {
+        $problems.Add("x:Uid=`"$uid`" is used by $($uidElementCount[$uid]) elements and owns $($propertiesByUid[$uid].Count) properties ($(($propertiesByUid[$uid]) -join ', ')); split it into one Uid per element.")
+    }
+}
 
 # --- result ---
 if ($problems.Count -gt 0) {
