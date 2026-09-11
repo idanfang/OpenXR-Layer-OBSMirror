@@ -26,7 +26,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # 固定 windows-2022：该镜像自带 Visual Studio 2022 (17.x) 与 MSBuild 组件，
+    # 与本项目的 PlatformToolset v143 及脚本内 vswhere -version '[17.0,18.0)' 的
+    # 查找范围一致。windows-latest 已迁移到 Windows Server 2025 + VS2026，
+    # 会导致脚本报 "Visual Studio 2022 MSBuild was not found."。
+    runs-on: windows-2022
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@v4
@@ -145,6 +149,17 @@ jobs:
             throw "ISCC not found at $iscc. Found elsewhere: $($found -join ', ')"
           }
           Write-Host "ISCC ready: $iscc"
+
+      - name: Verify MSBuild 17.x is available
+        shell: pwsh
+        run: |
+          $vswhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) { throw "vswhere not found at $vswhere" }
+          $install = & $vswhere -latest -version '[17.0,18.0)' -products * -requires Microsoft.Component.MSBuild -property installationPath
+          Write-Host "Visual Studio 2022 install: $install"
+          $msbuild = & $vswhere -latest -version '[17.0,18.0)' -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          if (-not $msbuild) { throw 'MSBuild 17.x was not found; the release script requires Visual Studio 2022.' }
+          Write-Host "MSBuild: $msbuild"
 
       - name: Build layer, OBS plugin, Control Center and installer
         shell: pwsh
