@@ -1,6 +1,6 @@
 # OpenXR + OpenVR OBS Mirror 安装
 
-> 简体中文 | [English](INSTALL.md) | [项目说明](../README.zh-CN.md)
+> 简体中文 | [English](INSTALL.md) | [项目说明](../README.md)
 
 OpenXR OBS Mirror 在 OBS Studio 中直接采集应用程序渲染的 OpenXR 视图或 SteamVR 的原生 OpenVR 合成器镜像，同时保留头显的正常运行时、视图和追踪。
 

@@ -26,7 +26,8 @@ public sealed record AppUpdateInfo(
 public sealed class AppUpdateService
 {
     private const string ReleasesApiUrl =
-        "https://api.github.com/repos/elliotttate/OpenXR-Layer-OBSMirror/releases?per_page=15";
+        // 汉化分支：更新源指向本仓库，避免把中文版更新成上游的英文版。
+        "https://api.github.com/repos/idanfang/OpenXR-Layer-OBSMirror/releases?per_page=15";
     private const string InstallerSuffix = "-Setup.exe";
     private const string ChecksumsAssetName = "SHA256SUMS.txt";
 

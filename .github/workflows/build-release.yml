@@ -1,0 +1,156 @@
+name: Build release (Windows x64)
+
+# 手动触发，或推送 v* 标签时自动构建。
+# 注意：workflow_dispatch 只有在工作流位于「默认分支」时才会出现在 Actions 页面里。
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号，必须已存在 docs/release-notes/v<版本>.md'
+        required: false
+        default: '0.3.0-zh.1'
+      file_version:
+        description: '四段数字文件版本（留空则自动推导）'
+        required: false
+        default: ''
+      obs_version:
+        description: 'OBS Studio 版本，需与使用者的 OBS 一致（留空=取 OBS 最新正式版）'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+
+      - name: Resolve version numbers
+        id: v
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}".Trim()
+          if (-not $version) { $version = "${{ github.ref_name }}".Trim() -replace '^v', '' }
+          if (-not $version) { throw 'No version resolved.' }
+
+          $fileVersion = "${{ github.event.inputs.file_version }}".Trim()
+          if (-not $fileVersion) {
+            if ($version -notmatch '^(\d+)\.(\d+)\.(\d+)(?:-[A-Za-z]+\.?(\d+))?') {
+              throw "Cannot derive a 4-part file version from '$version'; pass file_version explicitly."
+            }
+            $fourth = 0
+            if ($matches[4]) { $fourth = [int]$matches[4] }
+            $fileVersion = "$($matches[1]).$($matches[2]).$($matches[3]).$fourth"
+          }
+
+          $notes = "docs/release-notes/v$version.md"
+          if (-not (Test-Path -LiteralPath $notes -PathType Leaf)) {
+            throw "Missing release notes file: $notes (create it before building $version)."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "file_version=$fileVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version (file $fileVersion)"
+
+      - name: Prepare OBS source and installed build
+        id: obs
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.event.inputs.obs_version }}".Trim()
+          $headers = @{ 'User-Agent' = 'OpenXR-OBSMirror-CI'; 'Authorization' = "Bearer $env:GH_TOKEN" }
+          if (-not $tag) {
+            $tag = (Invoke-RestMethod -Uri 'https://api.github.com/repos/obsproject/obs-studio/releases/latest' -Headers $headers).tag_name
+            Write-Host "Resolved latest OBS release: $tag"
+          }
+
+          # 插件的构建脚本只需要 OBS 源码里的 libobs 头文件，用浅克隆即可。
+          $source = Join-Path $env:RUNNER_TEMP 'obs-studio'
+          git clone --depth 1 --branch $tag https://github.com/obsproject/obs-studio.git $source
+          if ($LASTEXITCODE -ne 0) { throw "Failed to clone obs-studio at tag $tag" }
+
+          # 安装侧只需要 bin\64bit 下的 obs.dll 与 obs64.exe，因此直接用便携版 ZIP，
+          # 不运行安装程序、不需要管理员权限。
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/obsproject/obs-studio/releases/tags/$tag" -Headers $headers
+          $asset = $release.assets |
+            Where-Object { $_.name -match '(?i)windows.*\.zip$' -and $_.name -notmatch '(?i)arm64' } |
+            Select-Object -First 1
+          if (-not $asset) { throw "No Windows x64 ZIP asset in the OBS release $tag" }
+
+          $zip = Join-Path $env:RUNNER_TEMP 'obs.zip'
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip
+          $extract = Join-Path $env:RUNNER_TEMP 'obs-extract'
+          Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force
+
+          $dll = Get-ChildItem -LiteralPath $extract -Recurse -Filter obs.dll |
+            Where-Object { $_.FullName -match 'bin\\64bit' } |
+            Select-Object -First 1
+          if (-not $dll) { throw 'obs.dll was not found inside the OBS archive.' }
+          $install = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $dll.FullName))
+
+          "obs_install=$install" >> $env:GITHUB_OUTPUT
+          "obs_version=$tag" >> $env:GITHUB_OUTPUT
+          Write-Host "OBS source: $source"
+          Write-Host "OBS install root: $install"
+
+      - name: Restore native NuGet packages
+        run: nuget restore .\OpenXR-Layer-OBSMirror.sln -Source https://api.nuget.org/v3/index.json
+
+      - name: Install Inno Setup 6
+        # Build-Release.ps1 硬编码了 "Inno Setup 6" 的安装路径，因此固定版本，
+        # 避免 choco 装上 Inno Setup 7 后路径不匹配。
+        run: choco install innosetup --version=6.7.3 --no-progress -y
+
+      - name: Verify Inno Setup 6 compiler
+        shell: pwsh
+        run: |
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) { throw "ISCC not found at $iscc" }
+          Write-Host "ISCC ready: $iscc"
+
+      - name: Build layer, OBS plugin, Control Center and installer
+        shell: pwsh
+        run: |
+          pwsh -File .\scripts\Build-Release.ps1 `
+            -Version '${{ steps.v.outputs.version }}' `
+            -FileVersion '${{ steps.v.outputs.file_version }}' `
+            -OBSSourcePath "$env:RUNNER_TEMP\obs-studio" `
+            -OBSInstallPath '${{ steps.obs.outputs.obs_install }}'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenXR-OBSMirror-${{ steps.v.outputs.version }}-zh-CN
+          path: artifacts/v${{ steps.v.outputs.version }}/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $dir = "artifacts/v${{ steps.v.outputs.version }}"
+          gh release create "v${{ steps.v.outputs.version }}" `
+            (Join-Path $dir "OpenXR-OBSMirror-${{ steps.v.outputs.version }}-Setup.exe") `
+            (Join-Path $dir "OpenXR-OBSMirror-${{ steps.v.outputs.version }}-Portable.zip") `
+            (Join-Path $dir 'SHA256SUMS.txt') `
+            --title "v${{ steps.v.outputs.version }} 简体中文版（非官方汉化）" `
+            --notes-file "docs/release-notes/v${{ steps.v.outputs.version }}.md"

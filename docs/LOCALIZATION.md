@@ -62,7 +62,8 @@
 
 ### 文档
 
-- `README.zh-CN.md`、`docs/INSTALL.zh-CN.md` 为中文版，顶部有语言互链；
+- `README.md`（本分支的首页即中文）与 `docs/INSTALL.zh-CN.md` 为中文版；
+  英文原文保留在 `README.en.md` 与 `docs/INSTALL.md`，顶部有语言互链；
   文档里提到的界面元素名称与**汉化后的实际界面文案**保持一致
   （依据 `localization/control-center-strings.tsv` 与 `OBSPlugin/win-openxr/data/locale/zh-CN.ini`）。
 - `scripts/Build-Release.ps1` 会把中文文档一并放进发布产物（便携版与安装程序）。
