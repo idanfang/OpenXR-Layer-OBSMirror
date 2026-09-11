@@ -123,15 +123,27 @@ jobs:
         run: nuget restore .\OpenXR-Layer-OBSMirror.sln -Source https://api.nuget.org/v3/index.json
 
       - name: Install Inno Setup 6
-        # Build-Release.ps1 硬编码了 "Inno Setup 6" 的安装路径，因此固定版本，
-        # 避免 choco 装上 Inno Setup 7 后路径不匹配。
-        run: choco install innosetup --version=6.7.3 --no-progress -y
+        # Build-Release.ps1 硬编码了 "Inno Setup 6" 的安装路径，因此固定 6.7.3。
+        # 直接从官方发布下载并静默安装，不依赖 Chocolatey 是否提供该版本。
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe'
+          $exe = Join-Path $env:RUNNER_TEMP 'innosetup-6.7.3.exe'
+          Invoke-WebRequest -Uri $url -OutFile $exe
+          Write-Host "Downloaded $((Get-Item -LiteralPath $exe).Length) bytes, version $((Get-Item -LiteralPath $exe).VersionInfo.ProductVersion)"
+          $process = Start-Process -FilePath $exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -Wait -PassThru
+          Write-Host "Inno Setup installer exit code: $($process.ExitCode)"
+          if ($process.ExitCode -ne 0) { throw "Inno Setup silent install failed (exit $($process.ExitCode))." }
 
       - name: Verify Inno Setup 6 compiler
         shell: pwsh
         run: |
           $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-          if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) { throw "ISCC not found at $iscc" }
+          if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) {
+            $found = Get-ChildItem 'C:\Program Files (x86)', 'C:\Program Files' -Filter ISCC.exe -Recurse -ErrorAction SilentlyContinue |
+              Select-Object -First 5 -ExpandProperty FullName
+            throw "ISCC not found at $iscc. Found elsewhere: $($found -join ', ')"
+          }
           Write-Host "ISCC ready: $iscc"
 
       - name: Build layer, OBS plugin, Control Center and installer
