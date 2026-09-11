@@ -16,17 +16,15 @@
 #define ChineseIslFile "languages\ChineseSimplified.isl"
 #define HasChineseIsl FileExists(AddBackslash(SourcePath) + ChineseIslFile)
 
-; AppPublisher / VersionInfoCompany stay language-neutral on purpose: these
-; values also surface in an English install (Ready page, Add/Remove Programs,
-; file properties), so the localization must not put Chinese text there. The
-; credit for the translation lives in docs/NOTICE-ZH-CN.md, which the Chinese
-; wizard shows through its own InfoAfterFile.
+; 本分支（zh-cn）是汉化版自己的发布分支，所以汉化署名直接写进发布者字段：
+; 中文用户在安装向导、"添加/删除程序"与文件属性里都能看到出处。
+; 上游 PR 分支（zh-cn-localization）刻意保持这两个值为语言中性，避免英文安装出现中文。
 [Setup]
 AppId={{8B49FA68-2786-4DCB-9A42-AC20AEF8208C}
 AppName=OpenXR OBS Mirror
 AppVersion={#MyAppVersion}
 AppVerName=OpenXR OBS Mirror {#MyAppVersion}
-AppPublisher=Elliott Tate
+AppPublisher=Elliott Tate (中文汉化: idanfang)
 AppPublisherURL=https://github.com/elliotttate/OpenXR-Layer-OBSMirror
 AppSupportURL=https://github.com/elliotttate/OpenXR-Layer-OBSMirror/issues
 AppUpdatesURL=https://github.com/elliotttate/OpenXR-Layer-OBSMirror/releases
@@ -49,7 +47,7 @@ CloseApplications=yes
 RestartApplications=no
 VersionInfoVersion={#MyFileVersion}
 VersionInfoTextVersion={#MyAppVersion}
-VersionInfoCompany=Elliott Tate
+VersionInfoCompany=Elliott Tate (中文汉化: idanfang)
 VersionInfoCopyright=Copyright (c) 2022 Matthieu Bucchianeri. Simplified Chinese localization by idanfang (unofficial).
 VersionInfoDescription=OpenXR OBS Mirror Setup
 VersionInfoProductName=OpenXR OBS Mirror
