@@ -33,7 +33,9 @@ The OpenXR layer template was based on
 
 ## Quick install
 
-1. Open the [latest GitHub release](https://github.com/elliotttate/OpenXR-Layer-OBSMirror/releases/latest).
+1. Open the [latest GitHub release](https://github.com/idanfang/OpenXR-Layer-OBSMirror/releases/latest)
+   of this localization build (the upstream project is
+   [elliotttate/OpenXR-Layer-OBSMirror](https://github.com/elliotttate/OpenXR-Layer-OBSMirror)).
 2. Close OBS Studio and any running OpenXR application.
 3. Download and run the `OpenXR-OBSMirror-...-Setup.exe` installer.
 4. Open OBS Studio and add **VR Mirror Capture (Auto: OpenXR / SteamVR)**.
