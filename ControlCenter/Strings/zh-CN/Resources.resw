@@ -865,10 +865,10 @@
     <value>预览已暂停</value>
   </data>
   <data name="Code_Svc_CpuFallbackSuffix" xml:space="preserve">
-    <value>•  CPU 回退</value>
+    <value>  •  CPU 回退</value>
   </data>
   <data name="Code_Svc_SeePreviewDiagnosticsSuffix" xml:space="preserve">
-    <value>•  参见“预览诊断”</value>
+    <value>  •  参见“预览诊断”</value>
   </data>
   <data name="Code_Svc_LiveFrameDetail" xml:space="preserve">
     <value>源 {0} × {1}  •  预览 {2} × {3}</value>

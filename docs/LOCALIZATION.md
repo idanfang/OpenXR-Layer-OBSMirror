@@ -99,8 +99,11 @@ pwsh -File localization/tools/Test-Localization.ps1            # 一致性校验
 ```
 
 `Test-Localization.ps1` 会在无编译器的情况下检查：资源名是否重复、各语言键集合是否一致、
-有无未翻译项、XAML 的 `x:Uid` 是否都有对应资源、C# 的 `Loc` 调用是否都指向**存在的资源名**、
-以及 OBS 插件各语言 ini 的键是否与 `en-US.ini` 完全对齐。
+有无未翻译项、resw 里**每个值**是否与表格逐条一致（键名对得上但内容过期同样会被检出）、
+resw 是否残留表格里已删掉的条目、XAML 的 `x:Uid` 是否都有对应资源、C# 的 `Loc` 调用是否
+都指向**存在的资源名**、每个 `code` 型资源是否真的被某个 `.cs` 引用（防止"英文写死在代码里、
+译文躺在 resw 里没人用"）、以及 OBS 插件各语言 ini 的键是否与 `en-US.ini` 完全对齐
+（含重复键检测）。
 
 ## 4. 构建与验证
 
@@ -155,8 +158,8 @@ makepri dump /if .\ControlCenter\bin\x64\Release\net8.0-windows10.0.19041.0\win-
   在服务内部仍是英文以便逻辑判断；界面显示处由 `MainWindow` 映射为中文，
   未知的第三方运行时/设备名按原文显示。
 - 裁切预设 `Reverb G2` 属于设备名，保持原文。
-- 安装程序的中文界面**未在本机编译验证**（本机没有安装 Inno Setup 6），
-  但已通过语言文件保护逻辑确保不会导致构建失败。
+- 安装程序的中文界面已在本机用 Inno Setup 6.7.3 实际编译通过（0 错误 / 0 警告），
+  并确认删除 `installer/languages/ChineseSimplified.isl` 后仍能编译（此时只有英文界面）。
 - OBS 插件的中文语言文件与 `win-openxr.cpp` 的改动**未在本机编译验证**
   （本机没有 OBS 源码树），已通过键集合一致性脚本校验。
 - `ControlCenter` 已用 .NET SDK 实际编译通过，并用 `makepri` 确认

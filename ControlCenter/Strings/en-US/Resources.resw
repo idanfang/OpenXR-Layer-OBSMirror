@@ -865,10 +865,10 @@
     <value>Preview paused</value>
   </data>
   <data name="Code_Svc_CpuFallbackSuffix" xml:space="preserve">
-    <value>•  CPU fallback</value>
+    <value>  •  CPU fallback</value>
   </data>
   <data name="Code_Svc_SeePreviewDiagnosticsSuffix" xml:space="preserve">
-    <value>•  See Preview diagnostics</value>
+    <value>  •  See Preview diagnostics</value>
   </data>
   <data name="Code_Svc_LiveFrameDetail" xml:space="preserve">
     <value>Source {0} × {1}  •  Preview {2} × {3}</value>

@@ -1,18 +1,26 @@
 [CmdletBinding()]
 param(
-    [string]$TablePath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'control-center-strings.tsv'),
+    [string]$TablePath,
     [string[]]$Languages = @('en-US', 'zh-CN'),
-    [string]$StringsRoot = (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ControlCenter\Strings')
+    [string]$StringsRoot
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# Resolved here rather than in parameter defaults: with [CmdletBinding()],
+# Windows PowerShell 5.1 evaluates defaults before $PSScriptRoot is set, which
+# made the documented "powershell -File <script>" invocation fail.
+if (-not $TablePath) { $TablePath = Join-Path (Split-Path -Parent $PSScriptRoot) 'control-center-strings.tsv' }
+if (-not $StringsRoot) { $StringsRoot = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ControlCenter\Strings' }
 
 # Compiles the translation table into ControlCenter/Strings/<lang>/Resources.resw.
 # Resource names are "<key>.<property>" for XAML rows and "<key>" for code rows.
 #
 # NOTE: keep this file ASCII-only. Windows PowerShell 5.1 parses scripts as ANSI,
 # and non-ASCII comments can swallow the following line break.
+
+. (Join-Path $PSScriptRoot 'TranslationTable.ps1')
 
 if (-not (Test-Path -LiteralPath $TablePath -PathType Leaf)) {
     throw "Translation table not found: $TablePath"
@@ -28,24 +36,19 @@ if (Test-Path -LiteralPath $fragmentRoot -PathType Container) {
 
 $rows = @()
 foreach ($path in $tablePaths) {
-    $rows += @(Import-Csv -LiteralPath $path -Delimiter "`t" -Encoding utf8)
+    $rows += @(Import-TranslationTable -Path $path)
 }
 if ($rows.Count -eq 0) { throw "Translation table has no rows: $TablePath" }
 Write-Host "Merged $($tablePaths.Count) table file(s), $($rows.Count) rows."
 
-# Reject duplicate resource names up front: MakePri fails the build on them.
+# Reject duplicate resource names up front: MakePri fails the build on them, and
+# two rows that normalize to the same name ("Text" and "Text#2") would otherwise
+# silently overwrite each other.
 $duplicates = @($rows |
-    Group-Object { "$($_.key)|$($_.prop)" } |
+    Group-Object { Get-TranslationResourceName -Row $_ } |
     Where-Object { $_.Count -gt 1 })
 if ($duplicates.Count -gt 0) {
-    throw "Duplicate key/property rows: $(($duplicates | ForEach-Object Name) -join ', ')"
-}
-
-function Get-ResourceName {
-    param($Row)
-    $property = $Row.prop -replace '[#*]\d*$', ''
-    if ($property -eq 'code') { return $Row.key }
-    return "$($Row.key).$property"
+    throw "Duplicate resource names: $(($duplicates | ForEach-Object Name) -join ', ')"
 }
 
 function ConvertTo-ReswXml {
@@ -91,17 +94,13 @@ foreach ($language in $Languages) {
     $entries = [ordered]@{}
     $fallbacks = 0
     foreach ($row in $rows) {
-        $name = Get-ResourceName -Row $row
-        $english = [string]$row.english
+        $name = Get-TranslationResourceName -Row $row
         $translated = [string]$row.$sourceColumn
 
         if ([string]::IsNullOrWhiteSpace($translated)) {
-            $entries[$name] = $english
             if ($language -ne 'en-US') { $fallbacks++ }
         }
-        else {
-            $entries[$name] = $translated
-        }
+        $entries[$name] = Get-TranslationValue -Row $row -Language $language
     }
 
     $languageDirectory = Join-Path $StringsRoot $language

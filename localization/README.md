@@ -13,6 +13,11 @@ localization/fragments/*.tsv              ← 分片：C# 代码文案（Loc.S /
 **不要直接手改 `ControlCenter/Strings/*/Resources.resw`** —— 它们是生成产物，
 会被 `New-ControlCenterResources.ps1` 覆盖。
 
+**值里的首尾空格是有意义的**：有些文案本身就以前导空格开头（例如追加在状态行后面的
+`  •  CPU fallback`），去掉就会改变英文界面的显示。因此表由
+`localization/tools/TranslationTable.ps1` 手工解析，而**不用 `Import-Csv`**
+（它会把每个字段的首尾空格吃掉）；生成器、校验器、XAML 注入器共用这一份实现。
+
 ## 表格列
 
 | 列 | 含义 |
@@ -38,6 +43,10 @@ pwsh -File localization/tools/Add-XamlUids.ps1
 # 3. 一致性校验（不需要编译器）
 pwsh -File localization/tools/Test-Localization.ps1
 ```
+
+没用 PowerShell 7 的话，把 `pwsh` 换成 `powershell` 即可（脚本在 5.1 与 7 上都能跑）。
+`localization/tools/TranslationTable.ps1` 不是可直接执行的脚本，它是上面三个脚本共用的
+表格读取函数，保证解析规则只有一份。
 
 ## 两个必须记住的约定
 

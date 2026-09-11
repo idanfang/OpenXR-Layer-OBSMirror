@@ -53,7 +53,7 @@ OpenXR 层模板基于
 `Launch OpenXR OBS Mirror.cmd`，然后在控制中心里使用 **安装 / 更新**。
 该应用包含其所需的 .NET 和 Windows App SDK 运行时文件。
 
-完整的安装、更新、卸载、录制控制与故障排查说明请见 [docs/INSTALL.md](docs/INSTALL.md)。请用发行版中的 `SHA256SUMS.txt` 校验下载文件；当前构建未签名，可能会触发 Windows SmartScreen 警告。
+完整的安装、更新、卸载、录制控制与故障排查说明请见 [docs/INSTALL.zh-CN.md](docs/INSTALL.zh-CN.md)（英文说明：[docs/INSTALL.md](docs/INSTALL.md)）。请用发行版中的 `SHA256SUMS.txt` 校验下载文件；当前构建未签名，可能会触发 Windows SmartScreen 警告。
 
 也可以手动注销当前用户的层注册：
 
@@ -203,7 +203,7 @@ pwsh -File .\scripts\Set-RecordingOverscan.ps1 -Disable
   画布的形状，使源填满画面、没有黑边、也不需要
   手动裁切值。它没有额外开销且立即生效，但在 16:9 画布上的方形
   镜像会损失顶部和底部各约 22%。
-- **178% 水平过扫描**（即 **尽可能宽**（Widest possible）形状按钮）会让镜像
+- **178% 水平过扫描**（即 **16:9** 形状按钮）会让镜像
   本身变成 16:9，因此没有需要裁切的内容，也没有损失——录制
   会保留完整的头显视图并在此基础上增加内容。代价是渲染像素增加 78%，
   并且需要重启 VR 应用程序。

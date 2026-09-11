@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using Microsoft.Windows.ApplicationModel.Resources;
 
@@ -22,7 +23,9 @@ internal static class Loc
     private const string LanguageOverrideVariable = "OBSMIRROR_LANG";
     private const string ResourcesPrefix = "Resources/";
 
-    private static readonly Dictionary<string, string> Cache = new(StringComparer.Ordinal);
+    // S/F are called from the UI thread and from the background preview loop,
+    // so the cache must tolerate concurrent reads while entries are filled in.
+    private static readonly ConcurrentDictionary<string, string> Cache = new(StringComparer.Ordinal);
 
     private static ResourceManager? _manager;
     private static ResourceMap? _map;
@@ -121,45 +124,11 @@ internal static class Loc
     }
 
     /// <summary>
-    /// 直接查询资源索引，返回一段诊断文本，用于排查"中文没有生效"这类问题。
-    /// 结果只写进启动日志，不参与界面显示。
+    /// 按英文原文填充参数，用于必须保持英文的输出（诊断日志与诊断报告）。
     /// </summary>
-    public static string DescribeResourceResolution(string resourceName)
+    public static string E(string english, params object?[] args)
     {
-        var parts = new List<string>
-        {
-            $"resources={ResourceDiagnostic}",
-            $"language={LanguageDiagnostic}",
-        };
-
-        try
-        {
-            var manager = new ResourceManager();
-            parts.Add($"languages={string.Join("|", Windows.Globalization.ApplicationLanguages.Languages)}");
-            parts.Add($"resourcesSubtree={(manager.MainResourceMap.TryGetSubtree("Resources") == null ? "<missing>" : "present")}");
-
-            var path = ResourcesPrefix + resourceName.Replace('.', '/');
-            foreach (var language in new[] { "zh-CN", "zh-Hans-CN", "en-US" })
-            {
-                try
-                {
-                    var context = manager.CreateResourceContext();
-                    context.QualifierValues["Language"] = language;
-                    var candidate = manager.MainResourceMap.TryGetValue(path, context);
-                    parts.Add($"{language}={(candidate?.ValueAsString ?? "<none>")}");
-                }
-                catch (Exception exception)
-                {
-                    parts.Add($"{language}=error:{exception.GetType().Name}");
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            parts.Add($"managerError={exception.GetType().Name}: {exception.Message}");
-        }
-
-        return string.Join(", ", parts);
+        return string.Format(CultureInfo.InvariantCulture, english, args);
     }
 
     private static string ResolveSystemLanguage()
