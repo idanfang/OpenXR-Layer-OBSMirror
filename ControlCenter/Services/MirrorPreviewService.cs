@@ -156,7 +156,10 @@ public sealed class MirrorPreviewService : IDisposable
                 return LocalizedWaiting(
                     "stopped",
                     "Preview stopped",
-                    "Reopen the app to start the mirror preview again.");
+                    "Reopen the app to start the mirror preview again.",
+                    localizedDetail: Loc.S(
+                        "Code_Svc_PreviewStoppedReopenDetail",
+                        "Reopen the app to start the mirror preview again."));
 
             if (!EnsureSurface(out var mappingError))
             {
@@ -189,18 +192,22 @@ public sealed class MirrorPreviewService : IDisposable
                 if (generation == 0 || handles.Any(handle => handle == 0))
                 {
                     ResetGraphics();
+                    const string waitingDetail =
+                        "The layer is connected, but only {0}/{1} shared texture handles are published " +
+                        "(generation {2}). Start or resume the VR app to publish an image. {3}";
+                    var published = handles.Count(handle => handle != 0);
                     return LocalizedWaiting(
                         "waiting-for-handles",
                         "Waiting for the first mirror frame",
-                        Loc.F(
+                        Loc.E(waitingDetail, published, TextureCount, generation, ReadLayerSummary()),
+                        connected: true,
+                        localizedDetail: Loc.F(
                             "Code_Svc_WaitingFirstMirrorFrameDetail",
-                            "The layer is connected, but only {0}/{1} shared texture handles are published " +
-                            "(generation {2}). Start or resume the VR app to publish an image. {3}",
-                            handles.Count(handle => handle != 0),
+                            waitingDetail,
+                            published,
                             TextureCount,
                             generation,
-                            ReadLayerSummary()),
-                        connected: true);
+                            ReadLayerSummary()));
                 }
 
                 if (generation != _surfaceGeneration || !handles.SequenceEqual(_sharedHandles))
@@ -223,17 +230,19 @@ public sealed class MirrorPreviewService : IDisposable
                 var description = texture.Description;
                 if (!IsSupportedPreviewFormat(description.Format))
                 {
+                    const string formatDetail = "The mirror is using {0} at {1} × {2}. OBS capture is unaffected.";
                     return LocalizedWaiting(
                         "unsupported-format",
                         "Preview format is not supported",
-                        Loc.F(
+                        Loc.E(formatDetail, description.Format, description.Width, description.Height),
+                        warning: true,
+                        connected: true,
+                        localizedDetail: Loc.F(
                             "Code_Svc_PreviewFormatNotSupportedDetail",
-                            "The mirror is using {0} at {1} × {2}. OBS capture is unaffected.",
+                            formatDetail,
                             description.Format,
                             description.Width,
-                            description.Height),
-                        warning: true,
-                        connected: true);
+                            description.Height));
                 }
 
                 RenderPreview(textureIndex);
@@ -881,34 +890,28 @@ public sealed class MirrorPreviewService : IDisposable
     private static byte ScaleToByte(uint value, uint maximum) =>
         (byte)((value * 255u + maximum / 2u) / maximum);
 
-    private MirrorPreviewResult DiagnosticWaiting(
-        string key,
-        string status,
-        string detail,
-        bool warning = false,
-        bool connected = false)
-    {
-        RecordDiagnostic(key, $"{status}: {detail}", warning);
-        return new MirrorPreviewResult(null, status, detail, false, connected);
-    }
-
     /// <summary>
-    /// Builds a waiting result whose Status/Detail are localized for the UI.
-    /// The English originals are still what gets written to the diagnostics
-    /// log, so support logs stay in one language.
+    /// Builds a waiting result whose Status (and, where a translation exists,
+    /// Detail) are localized for the UI.
+    ///
+    /// <paramref name="detail"/> must stay the English original: it is what the
+    /// diagnostics log records, so support logs remain in one language even
+    /// while the UI is translated. <paramref name="localizedDetail"/> is the
+    /// text shown in the UI instead, and is never written to the log.
     /// </summary>
     private MirrorPreviewResult LocalizedWaiting(
         string key,
         string status,
         string detail,
         bool warning = false,
-        bool connected = false)
+        bool connected = false,
+        string? localizedDetail = null)
     {
         RecordDiagnostic(key, $"{status}: {detail}", warning);
         return new MirrorPreviewResult(
             null,
             Loc.S(DescribeStatusKey(status), status),
-            detail,
+            localizedDetail ?? detail,
             false,
             connected);
     }

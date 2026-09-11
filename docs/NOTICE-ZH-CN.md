@@ -19,7 +19,8 @@
 
 OBS Studio 本体按 GNU GPL v2 或更高版本授权。本仓库中的 OBS 插件
 （`OBSPlugin/win-openxr`）会包含 OBS Studio 的头文件并链接其 libobs，因此其
-**编译后的二进制按 GPL-2.0-or-later 分发**；对应的完整源码即本仓库。
+**编译后的二进制按 GPL-2.0-or-later 分发**。该插件自身的源码在本仓库内；
+它需要配合 OBS Studio 源码树才能编译（接口头文件与 libobs 由后者提供）。
 
 OBS Studio 源码：https://github.com/obsproject/obs-studio
 

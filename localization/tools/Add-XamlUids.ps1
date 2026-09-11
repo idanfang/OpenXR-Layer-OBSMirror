@@ -1,12 +1,18 @@
 [CmdletBinding()]
 param(
-    [string]$TablePath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'control-center-strings.tsv'),
-    [string]$ControlCenterRoot = (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ControlCenter'),
+    [string]$TablePath,
+    [string]$ControlCenterRoot,
     [switch]$Reset
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# Resolved here rather than in parameter defaults: with [CmdletBinding()],
+# Windows PowerShell 5.1 evaluates defaults before $PSScriptRoot is set, which
+# made the documented "powershell -File <script>" invocation fail.
+if (-not $TablePath) { $TablePath = Join-Path (Split-Path -Parent $PSScriptRoot) 'control-center-strings.tsv' }
+if (-not $ControlCenterRoot) { $ControlCenterRoot = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ControlCenter' }
 
 # Adds x:Uid="key" to XAML elements based on the translation table.
 # The English literal stays on the element, so a missing language pack falls
@@ -26,7 +32,9 @@ $ErrorActionPreference = 'Stop'
 # NOTE: keep this file ASCII-only. Windows PowerShell 5.1 parses scripts as ANSI,
 # and non-ASCII comments can swallow the following line break.
 
-$rows = Import-Csv -LiteralPath $TablePath -Delimiter "`t" -Encoding utf8
+. (Join-Path $PSScriptRoot 'TranslationTable.ps1')
+
+$rows = Import-TranslationTable -Path $TablePath
 $targetsByFile = @{}
 foreach ($group in ($rows | Where-Object { $_.target -like '*.xaml' } | Group-Object target)) {
     $targetsByFile[$group.Name] = $group
@@ -151,16 +159,18 @@ foreach ($fileName in $targetsByFile.Keys) {
     }
 }
 
-if ($Reset) {
-    Write-Host "Removed $resetCount injected x:Uid attribute(s)."
-    return
-}
-
-Write-Host "Injected $injected x:Uid attribute(s); reused $reused existing element attribute(s)."
-
+# Failure reporting comes first: -Reset used to return before this block, so a
+# missing XAML file (recorded above) was never reported and the script exited 0.
 if ($failures.Count -gt 0) {
     Write-Host ''
     Write-Host 'The following rows need attention:' -ForegroundColor Red
     foreach ($failure in $failures) { Write-Host "  - $failure" -ForegroundColor Red }
     throw "$($failures.Count) localization row(s) could not be applied."
 }
+
+if ($Reset) {
+    Write-Host "Removed $resetCount injected x:Uid attribute(s)."
+    return
+}
+
+Write-Host "Injected $injected x:Uid attribute(s); reused $reused existing element attribute(s)."
