@@ -89,10 +89,17 @@ jobs:
           # 安装侧只需要 bin\64bit 下的 obs.dll 与 obs64.exe，因此直接用便携版 ZIP，
           # 不运行安装程序、不需要管理员权限。
           $release = Invoke-RestMethod -Uri "https://api.github.com/repos/obsproject/obs-studio/releases/tags/$tag" -Headers $headers
+          # 同一发布里既有 PDB 符号包（...-Windows-x64-PDBs.zip）也有各架构包，
+          # 必须排除符号包，否则会下载到不含 obs.dll 的压缩包。
           $asset = $release.assets |
-            Where-Object { $_.name -match '(?i)windows.*\.zip$' -and $_.name -notmatch '(?i)arm64' } |
+            Where-Object { $_.name -match '(?i)windows.*\.zip$' } |
+            Where-Object { $_.name -notmatch '(?i)arm64|pdbs|symbols' } |
+            Sort-Object { if ($_.name -match '(?i)^OBS-Studio-[\d.]+-Windows-x64\.zip$') { 0 } else { 1 } } |
             Select-Object -First 1
-          if (-not $asset) { throw "No Windows x64 ZIP asset in the OBS release $tag" }
+          if (-not $asset) {
+            throw "No usable Windows x64 ZIP asset in OBS release $tag. Assets: $(($release.assets | ForEach-Object name) -join ', ')"
+          }
+          Write-Host "Using OBS asset: $($asset.name)"
 
           $zip = Join-Path $env:RUNNER_TEMP 'obs.zip'
           Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip
@@ -102,7 +109,9 @@ jobs:
           $dll = Get-ChildItem -LiteralPath $extract -Recurse -Filter obs.dll |
             Where-Object { $_.FullName -match 'bin\\64bit' } |
             Select-Object -First 1
-          if (-not $dll) { throw 'obs.dll was not found inside the OBS archive.' }
+          if (-not $dll) {
+            throw "obs.dll was not found in $($asset.name); archive top level: $((Get-ChildItem -LiteralPath $extract | ForEach-Object Name) -join ', ')"
+          }
           $install = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $dll.FullName))
 
           "obs_install=$install" >> $env:GITHUB_OUTPUT
