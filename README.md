@@ -40,7 +40,7 @@ OpenXR 层模板基于
 
 ## 快速安装
 
-1. 打开[最新的 GitHub 发行版](https://github.com/elliotttate/OpenXR-Layer-OBSMirror/releases/latest)。
+1. 打开[最新的 GitHub 发行版](https://github.com/idanfang/OpenXR-Layer-OBSMirror/releases/latest)（本汉化版的发布页；上游原版见文首链接）。
 2. 关闭 OBS Studio 以及任何正在运行的 OpenXR 应用程序。
 3. 下载并运行 `OpenXR-OBSMirror-...-Setup.exe` 安装程序。
 4. 打开 OBS Studio，添加 **VR 镜像采集（自动：OpenXR / SteamVR）**。
