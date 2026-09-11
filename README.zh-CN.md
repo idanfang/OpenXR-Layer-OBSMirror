@@ -2,9 +2,16 @@
 
 > 简体中文 | [English](README.md)
 
-> **本分支是汉化版。** 界面中文随系统语言自动生效，也可用环境变量 `OBSMIRROR_LANG=zh-CN`
-> （或 `en-US`）强制指定；英文原文与英文界面完整保留，语言资源缺失时自动回退英文。
-> 实现方式、术语表、构建与校验步骤、已知限制见 [docs/LOCALIZATION.md](docs/LOCALIZATION.md)。
+> **非官方汉化分支。** 本仓库是社区简体中文汉化版，**并非上游作者发布的版本**，也未获得其背书或审核。
+> 上游项目：[elliotttate/OpenXR-Layer-OBSMirror](https://github.com/elliotttate/OpenXR-Layer-OBSMirror)
+> （作者 Elliott Tate；其中的 OpenXR API 层源自
+> [OpenXR-Layer-Template](https://github.com/mbucchia/OpenXR-Layer-Template)，MIT 许可，版权与全文见 [LICENSE](LICENSE)）。
+> 汉化内容与实现说明见 [docs/LOCALIZATION.md](docs/LOCALIZATION.md)，
+> 第三方组件与 OBS 插件的许可说明见 [THIRD_PARTY](THIRD_PARTY)，
+> 更完整的汉化版声明见 [docs/NOTICE-ZH-CN.md](docs/NOTICE-ZH-CN.md)。
+>
+> **语言切换**：界面中文随系统语言自动生效，也可用环境变量 `OBSMIRROR_LANG=zh-CN`（或 `en-US`）强制指定；
+> 英文原文与英文界面完整保留，语言资源缺失时自动回退英文。
 
 **在 OBS Studio 中直接采集原生 OpenXR 应用程序或 SteamVR/OpenVR 合成器。OpenXR 采集还可以使用更宽、更稳定的录制相机，同时头显继续正常观看和追踪。**
 

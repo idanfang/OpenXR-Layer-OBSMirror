@@ -21,7 +21,7 @@ AppId={{8B49FA68-2786-4DCB-9A42-AC20AEF8208C}
 AppName=OpenXR OBS Mirror
 AppVersion={#MyAppVersion}
 AppVerName=OpenXR OBS Mirror {#MyAppVersion}
-AppPublisher=Elliott Tate
+AppPublisher=Elliott Tate (中文汉化: idanfang)
 AppPublisherURL=https://github.com/elliotttate/OpenXR-Layer-OBSMirror
 AppSupportURL=https://github.com/elliotttate/OpenXR-Layer-OBSMirror/issues
 AppUpdatesURL=https://github.com/elliotttate/OpenXR-Layer-OBSMirror/releases
@@ -44,15 +44,17 @@ CloseApplications=yes
 RestartApplications=no
 VersionInfoVersion={#MyFileVersion}
 VersionInfoTextVersion={#MyAppVersion}
-VersionInfoCompany=Elliott Tate
+VersionInfoCompany=Elliott Tate (中文汉化: idanfang)
+VersionInfoCopyright=Copyright (c) 2022 Matthieu Bucchianeri. Simplified Chinese localization by idanfang (unofficial).
 VersionInfoDescription=OpenXR OBS Mirror Setup
 VersionInfoProductName=OpenXR OBS Mirror
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 #if HasChineseIsl
-; InfoBeforeFile 是 [Languages] 支持的按语言覆盖参数：中文安装向导显示中文安装说明。
-Name: "chinesesimplified"; MessagesFile: "languages\ChineseSimplified.isl"; InfoBeforeFile: "..\docs\INSTALL.zh-CN.md"
+; InfoBeforeFile / InfoAfterFile 是 [Languages] 支持的按语言覆盖参数：
+; 中文安装向导显示中文安装说明，并在完成页显示「关于本汉化版」声明。
+Name: "chinesesimplified"; MessagesFile: "languages\ChineseSimplified.isl"; InfoBeforeFile: "..\docs\INSTALL.zh-CN.md"; InfoAfterFile: "..\docs\NOTICE-ZH-CN.md"
 #endif
 
 [CustomMessages]
